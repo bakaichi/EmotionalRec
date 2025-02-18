@@ -1,8 +1,31 @@
 from fastapi import APIRouter, Query, HTTPException
 from recommendation.spotify_auth import get_spotify_oauth
+from recommendation.recommender import EmotionRecommender
+
 
 router = APIRouter()
 sp_oauth = get_spotify_oauth()
+
+@router.get("/recommend/{emotion}", summary="Get song recommendations based on emotion")
+def get_recommendations(emotion: str, access_token: str = None):
+    """
+    Get song recommendations based on the user's emotion.
+
+    - **emotion**: The emotion to base recommendations on (happy, sad, angry, calm).
+    - **access_token**: Spotify access token for personalized recommendations.
+    """
+    VALID_EMOTIONS = {"happy", "sad", "angry", "calm"}
+    if emotion not in VALID_EMOTIONS:
+        raise HTTPException(status_code=400, detail=f"Invalid emotion: {emotion}. Valid emotions are {VALID_EMOTIONS}.")
+
+    user_authenticated = bool(access_token)
+    recommender = EmotionRecommender(user_authenticated=user_authenticated, user_token=access_token)
+
+    return {
+        "emotion": emotion,
+        "recommended_songs": recommender.recommend_songs(emotion),
+    }
+
 
 @router.get("/login", summary="Login to Spotify")
 def login():
