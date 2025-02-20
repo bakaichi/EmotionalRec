@@ -91,3 +91,35 @@ class EmotionRecommender:
         except Exception as e:
             logger.error(f"Error fetching recommended songs: {str(e)}", exc_info=True)
             return {"error": "Spotify API request failed"}
+        
+
+    def create_playlist(self, emotion, access_token):
+        """Create a Spotify playlist based on emotion and add recommended songs."""
+        if not self.sp:
+            return {"error": "Spotify authentication failed"}
+
+        try:
+            # Get user's Spotify ID
+            user_id = self.sp.current_user()["id"]
+            playlist_name = f"{emotion.capitalize()} Vibes"
+            
+            # Create a private playlist
+            playlist = self.sp.user_playlist_create(user=user_id, name=playlist_name, public=False)
+            playlist_id = playlist["id"]
+            
+            # Get song recommendations
+            song_recommendations = self.recommend_songs(emotion)
+            track_uris = [track["url"].replace("https://open.spotify.com/track/", "spotify:track:") for track in song_recommendations if "url" in track]
+
+            # Add songs to playlist
+            if track_uris:
+                self.sp.playlist_add_items(playlist_id, track_uris)
+
+            return {
+                "message": "Playlist created successfully!",
+                "playlist_url": playlist["external_urls"]["spotify"]
+            }
+        
+        except Exception as e:
+            logger.error(f"Error creating playlist: {str(e)}", exc_info=True)
+            return {"error": "Failed to create playlist"}

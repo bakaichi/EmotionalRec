@@ -44,3 +44,15 @@ def callback(code: str = Query(None)):
         raise HTTPException(status_code=400, detail="Failed to retrieve access token.")
     
     return {"message": "Login successful!", "access_token": token_info["access_token"]}
+
+
+@router.post("/create-playlist/{emotion}", summary="Create a Spotify playlist based on emotion")
+def create_playlist(emotion: str, access_token: str):
+    """
+    Create a Spotify playlist based on a users emotion.
+
+    - **emotion**: The emotion to base the playlist created on (e.g., happy, sad, angry, calm).
+    - **access_token**: Spotify access token for playlist creation.
+    """
+    recommender = EmotionRecommender(user_authenticated=True, user_token=access_token)
+    return recommender.create_playlist(emotion, access_token)
