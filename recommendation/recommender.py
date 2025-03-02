@@ -1,6 +1,7 @@
 import logging
 from .spotify_auth import get_spotify_client
 from .spotify_utils import format_song_response
+import random
 
 # logger
 logging.basicConfig(level=logging.INFO)
@@ -94,7 +95,7 @@ class EmotionRecommender:
         
 
     def create_playlist(self, emotion, access_token):
-        """Create a Spotify playlist based on emotion and add recommended songs."""
+        """Create a balanced Spotify playlist based on emotion."""
         if not self.sp:
             return {"error": "Spotify authentication failed"}
 
@@ -107,9 +108,41 @@ class EmotionRecommender:
             playlist = self.sp.user_playlist_create(user=user_id, name=playlist_name, public=False)
             playlist_id = playlist["id"]
             
-            # Get song recommendations
-            song_recommendations = self.recommend_songs(emotion)
-            track_uris = [track["url"].replace("https://open.spotify.com/track/", "spotify:track:") for track in song_recommendations if "url" in track]
+            # get song recommendations
+            recommendation_response = self.recommend_songs(emotion)  
+            song_recommendations = recommendation_response # Ensures that its a list
+            
+            if not song_recommendations:
+                return {"error": "No recommendations found to create a playlist"}
+
+            # Filter for diverse tracks - limit repeats
+            unique_artists = {}
+            balanced_tracks = []
+            
+            for track in song_recommendations:
+                artist = track["artist"]
+                if artist not in unique_artists:
+                    unique_artists[artist] = 0  # track artist occurrences
+                if unique_artists[artist] < 3:  # max 2 songs per artist
+                    balanced_tracks.append(track)
+                    unique_artists[artist] += 1
+            
+            # shuffle the songs to avoid clustering similar songs
+            random.shuffle(balanced_tracks)
+            
+            # Ensure getting a variety of genres
+            genre_diverse_tracks = []
+            seen_genres = set()
+            for track in balanced_tracks:
+                if len(genre_diverse_tracks) >= 20:  # sets playlist size
+                    break
+                if track["artist"] in seen_genres:
+                    continue
+                genre_diverse_tracks.append(track)
+                seen_genres.add(track["artist"])
+
+            # convert to Spotify track URI
+            track_uris = [track["url"].replace("https://open.spotify.com/track/", "spotify:track:") for track in genre_diverse_tracks]
 
             # Add songs to playlist
             if track_uris:
