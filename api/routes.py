@@ -1,10 +1,25 @@
 from fastapi import APIRouter, Query, HTTPException
 from recommendation.spotify_auth import get_spotify_oauth
 from recommendation.recommender import EmotionRecommender
-
+import json
+import os
 
 router = APIRouter()
 sp_oauth = get_spotify_oauth()
+
+@router.get("/token", summary="Get latest Spotify access token")
+def get_access_token():
+    """Reads the cached access token from the .cache file."""
+    cache_file = ".cache"
+
+    if os.path.exists(cache_file):
+        with open(cache_file, "r") as file:
+            token_data = json.load(file)
+            access_token = token_data.get("access_token")
+            if access_token:
+                return {"access_token": access_token}
+    
+    raise HTTPException(status_code=404, detail="No valid access token found.")
 
 @router.post("/recommend")
 async def recommend_songs(data: dict):
