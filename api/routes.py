@@ -6,6 +6,32 @@ from recommendation.recommender import EmotionRecommender
 router = APIRouter()
 sp_oauth = get_spotify_oauth()
 
+@router.post("/recommend")
+async def recommend_songs(data: dict):
+    """Receive emotion from detection model and return recommended songs (and create a playlist if authenticated)."""
+    emotion = data.get("emotion", "").lower()
+    access_token = data.get("access_token", None)  # Get access token
+
+    if emotion not in ["happy", "sad", "angry", "calm"]:
+        return {"error": "Invalid emotion provided"}
+
+    user_authenticated = bool(access_token)  # Determine if user is logged in
+    recommender = EmotionRecommender(user_authenticated=user_authenticated, user_token=access_token)
+
+    recommendations = recommender.recommend_songs(emotion)
+
+    # if a user is authenticated, create a playlist automatically
+    playlist_response = None
+    if user_authenticated:
+        playlist_response = recommender.create_playlist(emotion, access_token)
+
+    return {
+        "emotion": emotion,
+        "user_authenticated": user_authenticated,
+        "recommended_songs": recommendations,
+        "playlist_created": playlist_response if user_authenticated else None
+    }
+
 @router.get("/recommend/{emotion}", summary="Get song recommendations based on emotion")
 def get_recommendations(emotion: str, access_token: str = None):
     """
@@ -32,6 +58,7 @@ def login():
     """Redirects the user to Spotify's authorization page."""
     auth_url = sp_oauth.get_authorize_url()
     return {"message": "Click the link to login to Spotify", "auth_url": auth_url}
+
 
 @router.get("/callback", summary="Spotify OAuth Callback")
 def callback(code: str = Query(None)):
