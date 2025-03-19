@@ -102,10 +102,5 @@ To authenticate Spotify users:
 
 ---
 
-## **📌 Contributors**
-- **Your Name (@bakaichi)** – Main Developer 💻
-
----
-
 🔥 **Enjoy Emotion-Based Music Recommendations!** 🎧
 
