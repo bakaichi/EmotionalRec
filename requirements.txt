@@ -2,3 +2,6 @@ fastapi
 uvicorn
 python-dotenv
 ngrok
+PyDrive2
+python-multipart
+oauth2client
