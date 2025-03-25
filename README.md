@@ -1,30 +1,33 @@
 # 🎵 EmotionalRec - Emotion-Based Music Recommendation System
 
 ## **📌 Overview**
-EmotionalRec is an AI-driven **music recommendation system** that analyzes **facial expressions from video** and recommends **personalized Spotify playlists** based on emotions.
+EmotionalRec is an AI-powered **music recommendation system** that analyzes **facial expressions from user-submitted videos** to recommend **personalized Spotify playlists**.
 
 ## **🚀 How It Works**
 1. **Emotion Detection** 🧠
-   - Processes video frames using **DeepFace** and **OpenCV**.
-   - Detects emotions (Happy, Sad, Angry, Calm) from facial expressions.
-   
-2. **Music Recommendation** 🎵
-   - Sends the detected emotion to the **FastAPI-based recommender**.
-   - Recommender selects **songs/playlists** based on the user's mood.
-   - Uses **Spotify API** to fetch recommendations.
+   - Users upload videos via the frontend.
+   - Videos are stored in **Google Drive**.
+   - A **Google Colab notebook** polls for new uploads, processes the video using **DeepFace** (RetinaFace specifically), and sends the dominant emotion to the backend.
 
-3. **Personalized Playlists** 🎧
-   - If logged in, the recommender uses the user’s **Spotify listening history**.
-   - A **custom playlist** is created and saved to the user's Spotify account.
-   
+2. **Backend Processing** ⚙️
+   - The **FastAPI backend** receives the emotion via a `POST /colab_callback` route.
+   - Internally calls the `/recommend` route to fetch mood-based song suggestions.
+   - Optionally creates a Spotify playlist for authenticated users.
+
+3. **Frontend Integration** 💻
+   - Built with **React** + **Tailwind CSS**.
+   - Users can **log in with Spotify**, **upload a video**, and receive a **playlist embedded on the page**.
+
 ## **🛠 Technologies Used**
-- **DeepFace** (Emotion detection)
-- **OpenCV** (Video processing)
-- **FastAPI** (Backend API)
-- **Spotipy** (Spotify API integration)
-- **Google Colab** (Running emotion detection model)
-- **Ngrok** (Exposing API for Colab)
-- **Python** (Core logic)
+- **DeepFace** (emotion classification)
+- **OpenCV** (video frame processing)
+- **Google Colab + PyDrive2** (remote emotion detection)
+- **FastAPI** (backend API)
+- **Spotipy** (Spotify API for Python)
+- **Google Drive API** (video uploads)
+- **Ngrok** (expose FastAPI to Colab)
+- **React.js** (frontend UI)
+- **Tailwind CSS** (styling)
 
 ---
 
@@ -36,69 +39,94 @@ git clone https://github.com/your-username/EmotionalRec.git
 cd EmotionalRec
 ```
 
-### **2️⃣ Install Dependencies**
-Create a virtual environment and install required packages:
+### **2️⃣ Backend Setup**
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### **3️⃣ Set Up Environment Variables**
-Create a `.env` file in the root directory and add your **Spotify API credentials**:
+### **3️⃣ Create .env File**
 ```ini
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 REDIRECT_URI=http://localhost:8000/callback
 ```
 
-### **4️⃣ Start the Recommender API**
+### **4️⃣ Set Up Google Drive Access**
+- Go to [Google Cloud Console](https://console.cloud.google.com/)
+- Create a **service account** and download the `.json` key file
+- Save it as `gdrive_service_account.json` in root folder
+- Share your target Drive folder with the service account email
+
+
+### **5️⃣ Run the Backend**
 ```bash
 uvicorn main:app --reload
 ```
-The API should now be running at: **`http://127.0.0.1:8000`**
 
-### **5️⃣ Expose API to Google Colab (Ngrok)**
-If running detection on Google Colab, you need to expose the local API:
+### **6️⃣ Run the Frontend**
 ```bash
-ngrok http 8000
+cd frontend
+npm install
+npm run start
 ```
-Copy the **ngrok public URL** and update it in `colab_notebook`.
 
 ---
 
-## **📡 Authentication (Spotify OAuth)**
-### **Login & Get Access Token**
-To authenticate Spotify users:
-1. Visit `http://127.0.0.1:8000/login` in your browser.
-2. Click the Spotify login link.
-3. After logging in, Spotify will redirect you to `http://127.0.0.1:8000/callback` with an **access token**.
-4. Token is stored in `.cache` and used for personalized recommendations.
-
----
-
-## **🚀 Running the Emotion Detector (Google Colab)**
-1. Open **Google Colab**
-2. Upload `colab_notebook.ipynb`.
-3. Modify `RECOMMENDER_API_URL` with your **ngrok link**.
-4. Run all cells to start emotion detection.
-5. After detection, the system sends the **most common emotion** to the recommender.
+## **🚀 Colab Notebook Setup**
+1. Open `colab_notebook.ipynb`
+2. Mount Google Drive
+3. Ensure `upload_folder` points to shared Drive folder
+4. Set `RECOMMENDER_API_URL` to your **ngrok** endpoint (or hosted backend), ngrok is necessary if running locally (needs a key to be used)
+5. Run all cells – after emotion is detected, it sends a `POST` to `/colab_callback`
 
 ---
 
 ## **🎯 API Endpoints**
-### **📌 Emotion-Based Music Recommendation**
-- **`POST /recommend`** – Receive an emotion and return song recommendations.
-  - **Payload:** `{ "emotion": "happy", "access_token": "your_token" }`
-  - **Response:** List of recommended songs.
 
-- **`POST /create-playlist/{emotion}`** – Creates a Spotify playlist for the user.
-  - **Requires Spotify Login.**
-  - **Returns:** Playlist link.
+### ✅ **/upload_video**
+Uploads a video file to Google Drive.
 
-### **📌 Spotify Authentication**
-- **`GET /login`** – Redirects to Spotify login.
-- **`GET /callback`** – Handles OAuth callback, retrieves tokens.
+### ✅ **/process_latest**
+Waits for Colab to detect emotion and send the result.
+Returns playlist and recommendations.
+
+### ✅ **/colab_callback**
+Internal use by Colab to send emotion + access token (if any).
+Calls `/recommend` and stores results temporarily.
+
+### ✅ **/recommend**
+Recommends songs and optionally creates a playlist.
+
+### ✅ **/login + /callback**
+Spotify login flow using OAuth.
+
+---
+
+## **🌐 CORS Setup**
+In `main.py`, frontend has to be given access via:
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+This makes sure that requests from the React app can be processed by the FastAPI backend - due to 2 different local servers.
+
+---
+
+## **🧪 Example Flow**
+1. User logs in with Spotify.
+2. Uploads a video through frontend.
+3. Video is uploaded to Google Drive.
+4. Colab processes the video, detects emotion.
+5. Sends emotion + token to backend.
+6. Backend sends back a playlist.
+7. Playlis (iFrame) is embedded in the frontend.
 
 ---
 
