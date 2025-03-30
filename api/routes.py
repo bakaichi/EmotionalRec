@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Query, HTTPException, UploadFile, File
+from fastapi.responses import RedirectResponse
 from recommendation.spotify_auth import get_spotify_oauth
 from recommendation.recommender import EmotionRecommender
 import json
@@ -107,13 +108,18 @@ def get_recommendations(emotion: str, access_token: str = None):
 
 @router.get("/login", summary="Login to Spotify")
 def login():
-    """Redirects the user to Spotify's authorization page."""
+    """
+    Redirects user directly to Spotify auth page.
+    """
     auth_url = sp_oauth.get_authorize_url()
-    return {"message": "Click the link to login to Spotify", "auth_url": auth_url}
+    return RedirectResponse(auth_url)
 
 @router.get("/callback", summary="Spotify OAuth Callback")
 def callback(code: str = Query(None)):
-    """Handles the OAuth callback from Spotify and returns an access token."""
+    """
+    Handles the OAuth callback from Spotify.
+    Stores access token in .cache and redirects back to frontend.
+    """
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code is missing.")
 
@@ -121,7 +127,7 @@ def callback(code: str = Query(None)):
     if not token_info:
         raise HTTPException(status_code=400, detail="Failed to retrieve access token.")
 
-    return {"message": "Login successful!", "access_token": token_info["access_token"]}
+    return RedirectResponse("http://localhost:3000")  # route to be updated if hosted
 
 @router.post("/create-playlist/{emotion}", summary="Create a Spotify playlist based on emotion")
 def create_playlist(emotion: str, access_token: str):
