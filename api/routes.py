@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, HTTPException, UploadFile, File
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from recommendation.spotify_auth import get_spotify_oauth
 from recommendation.recommender import EmotionRecommender
 import json
@@ -16,6 +16,23 @@ sp_oauth = get_spotify_oauth()
 # storing emotion and playlist result here temporarily
 latest_result = {"ready": False, "data": None}
 response_event = Event()
+
+@router.post("/logout", summary="Logout from Spotify")
+def logout():
+    """
+    Deletes the Spotify .cache file to simulate logout.
+    """
+    cache_file = ".cache"
+
+    if os.path.exists(cache_file):
+        try:
+            os.remove(cache_file)
+            return JSONResponse(content={"message": "Logged out successfully."}, status_code=200)
+        except Exception as e:
+            return JSONResponse(content={"error": f"Error deleting cache: {e}"}, status_code=500)
+
+    return JSONResponse(content={"message": "No active session to log out."}, status_code=200)
+
 
 @router.post("/colab_callback")
 def colab_callback(data: dict):
@@ -180,8 +197,8 @@ def process_latest():
     latest_result["data"] = None
     response_event.clear()
 
-    # Wait for Colab to send back emotion (timeout after 60s)
-    is_set = response_event.wait(timeout=1000)
+    # Wait for Colab to send back emotion (timeout after 400s)
+    is_set = response_event.wait(timeout=400)
 
     if not is_set:
         raise HTTPException(status_code=504, detail="Colab processing timed out.")

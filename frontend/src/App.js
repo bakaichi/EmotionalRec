@@ -5,6 +5,15 @@ export default function App() {
   const [playlistUrl, setPlaylistUrl] = useState(null);
   const [progressStage, setProgressStage] = useState(null); // added to track progress stage
   const [loggedIn, setLoggedIn] = useState(false); // added to track Spotify login
+  const [detectedEmotion, setDetectedEmotion] = useState(null); // added for emotion preview
+
+  const emotionEmojis = {
+    happy: "😄",
+    sad: "😢",
+    angry: "😠",
+    calm: "😌",
+    neutral: "😐",
+  };
 
   useEffect(() => {
     // check if access token is available
@@ -20,9 +29,22 @@ export default function App() {
   }, []);
 
   const handleLogin = () => {
-    window.location.href = "http://127.0.0.1:8000/login"; // to be adjusted if hosted externally 
+    window.location.href = "http://127.0.0.1:8000/login"; // to be adjusted if hosted externally
   };
 
+  const handleLogout = () => {
+    fetch("http://127.0.0.1:8000/logout", {
+      method: "POST",
+    })
+      .then(() => {
+        setLoggedIn(false);
+        window.location.reload(); // refresh to reflect logged-out UI
+      })
+      .catch((err) => {
+        console.error("Logout failed:", err);
+      });
+  };
+  
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
@@ -36,7 +58,7 @@ export default function App() {
     try {
       // uploading a video video
       setProgressStage("uploading");
-      const uploadResponse = await fetch("http://127.0.0.1:8000/upload_video", { // to be adjusted if hosted externally 
+      const uploadResponse = await fetch("http://127.0.0.1:8000/upload_video", {
         method: "POST",
         body: formData,
       });
@@ -49,11 +71,15 @@ export default function App() {
 
       // trigger processing
       setProgressStage("analyzing");
-      const processResponse = await fetch("http://127.0.0.1:8000/process_latest", { // to be adjusted if hosted externally 
+      const processResponse = await fetch("http://127.0.0.1:8000/process_latest", {
         method: "POST",
       });
 
       const data = await processResponse.json();
+
+      if (data.emotion) {
+        setDetectedEmotion(data.emotion);
+      }
 
       if (data.playlist_created?.playlist_url) {
         const rawUrl = data.playlist_created.playlist_url;
@@ -80,35 +106,46 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <h1 className="text-3xl font-bold mb-4">Emotion-Based Music Recommender</h1>
+    <div className="relative flex flex-col items-center min-h-screen bg-gray-900 text-white p-4">
+      {/* Title */}
+      <h1 className="text-[5rem] font-extrabold tracking-tight uppercase text-white drop-shadow-md border-b-4 border-white pb-2 mb-12">
+        EmotionalRec
+      </h1>
 
-      {loggedIn ? (
-        <div className="mb-6 px-4 py-2 bg-green-600 rounded-full text-white shadow">
-          Logged in to Spotify
-        </div>
-      ) : (
+      {/* Top right login/logout */}
+      <div className="absolute top-4 right-4 flex gap-2">
+        {loggedIn ? (
+          <button
+            onClick={handleLogout}
+            className="px-4 py-1 bg-red-500 hover:bg-red-600 rounded-full text-sm font-medium shadow"
+          >
+            Logout
+          </button>
+        ) : (
+          <button
+            onClick={handleLogin}
+            className="px-4 py-1 bg-green-500 hover:bg-green-600 rounded-full text-sm font-medium shadow"
+          >
+            Login with Spotify
+          </button>
+        )}
+      </div>
+
+      {/* Upload Row */}
+      <div className="flex flex-col sm:flex-row items-center gap-4 mt-4">
+        <input
+          type="file"
+          accept="video/*"
+          onChange={handleFileChange}
+          className="w-72 sm:w-96 px-4 py-2 rounded-2xl bg-white text-black shadow focus:outline-none"
+        />
         <button
-          onClick={handleLogin}
-          className="mb-6 px-6 py-2 bg-green-500 rounded-lg shadow hover:bg-green-600"
+          onClick={handleUploadAndProcess}
+          className="px-6 py-2 bg-blue-500 rounded-lg shadow hover:bg-blue-600"
         >
-          Login with Spotify
+          Upload & Process Video
         </button>
-      )}
-
-      <input
-        type="file"
-        accept="video/*"
-        className="w-96 p-2 rounded bg-white text-black"
-        onChange={handleFileChange}
-      />
-
-      <button
-        onClick={handleUploadAndProcess}
-        className="mt-4 px-6 py-2 bg-blue-500 rounded-lg shadow hover:bg-blue-600"
-      >
-        Upload & Process Video
-      </button>
+      </div>
 
       {/* progress status */}
       {progressStage === "uploading" && (
@@ -125,6 +162,25 @@ export default function App() {
       )}
       {progressStage === "done" && (
         <div className="mt-4 text-green-400 font-semibold">✅ Playlist ready!</div>
+      )}
+
+      {/* detected emotion preview */}
+      {detectedEmotion && (
+        <div
+          className={`rounded-xl px-6 py-4 mt-6 text-white text-center shadow-xl transition-all
+            ${
+              detectedEmotion === 'happy' ? 'bg-gradient-to-r from-yellow-400 via-pink-400 to-red-400' :
+              detectedEmotion === 'sad' ? 'bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500' :
+              detectedEmotion === 'angry' ? 'bg-gradient-to-r from-red-500 via-yellow-600 to-orange-400' :
+              detectedEmotion === 'calm' ? 'bg-gradient-to-r from-teal-400 via-blue-300 to-green-300' :
+              'bg-gray-600'
+            }`}
+        >
+          <div className="text-xl font-semibold">Detected Emotion:</div>
+          <div className="text-5xl">
+            {emotionEmojis[detectedEmotion] || "🧠"} {detectedEmotion.charAt(0).toUpperCase() + detectedEmotion.slice(1)}
+          </div>
+        </div>
       )}
 
       {playlistUrl && (
