@@ -1,9 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function App() {
   const [file, setFile] = useState(null);
   const [playlistUrl, setPlaylistUrl] = useState(null);
   const [progressStage, setProgressStage] = useState(null); // added to track progress stage
+  const [loggedIn, setLoggedIn] = useState(false); // added to track Spotify login
+
+  useEffect(() => {
+    // check if access token is available
+    fetch("http://127.0.0.1:8000/token")
+      .then((res) => {
+        if (res.status === 200) {
+          setLoggedIn(true);
+        }
+      })
+      .catch(() => {
+        setLoggedIn(false);
+      });
+  }, []);
 
   const handleLogin = () => {
     window.location.href = "http://127.0.0.1:8000/login"; // to be adjusted if hosted externally 
@@ -69,12 +83,18 @@ export default function App() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-3xl font-bold mb-4">Emotion-Based Music Recommender</h1>
 
-      <button
-        onClick={handleLogin}
-        className="mb-6 px-6 py-2 bg-green-500 rounded-lg shadow hover:bg-green-600"
-      >
-        Login with Spotify
-      </button>
+      {loggedIn ? (
+        <div className="mb-6 px-4 py-2 bg-green-600 rounded-full text-white shadow">
+          Logged in to Spotify
+        </div>
+      ) : (
+        <button
+          onClick={handleLogin}
+          className="mb-6 px-6 py-2 bg-green-500 rounded-lg shadow hover:bg-green-600"
+        >
+          Login with Spotify
+        </button>
+      )}
 
       <input
         type="file"
@@ -116,6 +136,7 @@ export default function App() {
             height="380"
             allow="encrypted-media"
             className="mt-2 rounded-lg"
+            title="Spotify Playlist"
           ></iframe>
         </div>
       )}
