@@ -3,6 +3,7 @@ import React, { useState } from "react";
 export default function App() {
   const [file, setFile] = useState(null);
   const [playlistUrl, setPlaylistUrl] = useState(null);
+  const [progressStage, setProgressStage] = useState(null); // added to track progress stage
 
   const handleLogin = () => {
     window.location.href = "http://127.0.0.1:8000/login"; // to be adjusted if hosted externally 
@@ -20,6 +21,7 @@ export default function App() {
 
     try {
       // uploading a video video
+      setProgressStage("uploading");
       const uploadResponse = await fetch("http://127.0.0.1:8000/upload_video", { // to be adjusted if hosted externally 
         method: "POST",
         body: formData,
@@ -27,10 +29,12 @@ export default function App() {
 
       const uploadResult = await uploadResponse.json();
       if (!uploadResult.success) {
+        setProgressStage(null);
         return alert("Upload failed. Try again.");
       }
 
       // trigger processing
+      setProgressStage("analyzing");
       const processResponse = await fetch("http://127.0.0.1:8000/process_latest", { // to be adjusted if hosted externally 
         method: "POST",
       });
@@ -45,13 +49,17 @@ export default function App() {
         if (playlistId) {
           const embedUrl = `https://open.spotify.com/embed/playlist/${playlistId}`;
           setPlaylistUrl(embedUrl);
+          setProgressStage("done");
         } else {
+          setProgressStage(null);
           alert("Failed to extract playlist ID");
         }
       } else {
+        setProgressStage(null);
         alert("Failed to generate playlist");
       }
     } catch (error) {
+      setProgressStage(null);
       console.error("Error:", error);
       alert("An error occurred while uploading or processing the video.");
     }
@@ -81,6 +89,23 @@ export default function App() {
       >
         Upload & Process Video
       </button>
+
+      {/* progress status */}
+      {progressStage === "uploading" && (
+        <div className="mt-4 text-yellow-300 flex items-center gap-2">
+          <span className="animate-spin inline-block w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full"></span>
+          Uploading video...
+        </div>
+      )}
+      {progressStage === "analyzing" && (
+        <div className="mt-4 text-blue-300 flex items-center gap-2">
+          <span className="animate-spin inline-block w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full"></span>
+          Analyzing emotion...
+        </div>
+      )}
+      {progressStage === "done" && (
+        <div className="mt-4 text-green-400 font-semibold">✅ Playlist ready!</div>
+      )}
 
       {playlistUrl && (
         <div className="mt-6">
