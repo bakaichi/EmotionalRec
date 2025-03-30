@@ -5,3 +5,4 @@ ngrok
 PyDrive2
 python-multipart
 oauth2client
+spotipy
