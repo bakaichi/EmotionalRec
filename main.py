@@ -4,20 +4,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# this is used to bypass a bug of frontend not being able to cross-communicate with backend as they're running on 2 separate ports
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # bypass to allow requests from frontend hosted on port 3000
+    allow_origins=["*"], # restrict to frontend domain if hosted
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register API routes
+# Register routes
 app.include_router(router)
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to EmotionalRec API"}
 
-# Run with: uvicorn main:app --reload
+# Only needed for local dev
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
