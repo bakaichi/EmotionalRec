@@ -13,6 +13,9 @@ from threading import Event
 router = APIRouter()
 sp_oauth = get_spotify_oauth()
 
+# sets processing stage
+current_status = {"stage": None} 
+
 # storing emotion and playlist result here temporarily
 latest_result = {"ready": False, "data": None}
 response_event = Event()
@@ -32,6 +35,13 @@ def logout():
             return JSONResponse(content={"error": f"Error deleting cache: {e}"}, status_code=500)
 
     return JSONResponse(content={"message": "No active session to log out."}, status_code=200)
+
+@router.get("/status_check")
+def status_check():
+    """
+    Frontend polls this to check current status (e.g., 'processing_started').
+    """
+    return {"status": current_status["stage"]}
 
 @router.post("/status_update")
 def status_update(data: dict):
