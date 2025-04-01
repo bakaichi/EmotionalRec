@@ -79,6 +79,7 @@ export default function App() {
 
       if (data.emotion) {
         setDetectedEmotion(data.emotion);
+        setProgressStage("generating_playlist");
       }
 
       if (data.playlist_created?.playlist_url) {
@@ -88,8 +89,12 @@ export default function App() {
 
         if (playlistId) {
           const embedUrl = `https://open.spotify.com/embed/playlist/${playlistId}`;
-          setPlaylistUrl(embedUrl);
-          setProgressStage("done");
+
+          // Delay to allow Spotify to sync playlist metadata
+          setTimeout(() => {
+            setPlaylistUrl(embedUrl);
+            setProgressStage("done");
+          }, 5000); // 5 seconds delay
         } else {
           setProgressStage(null);
           alert("Failed to extract playlist ID");
@@ -158,6 +163,12 @@ export default function App() {
         <div className="mt-4 text-blue-300 flex items-center gap-2">
           <span className="animate-spin inline-block w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full"></span>
           Analyzing emotion...
+        </div>
+      )}
+      {progressStage === "generating_playlist" && (
+        <div className="mt-4 text-pink-300 flex items-center gap-2">
+          <span className="animate-spin inline-block w-4 h-4 border-2 border-pink-300 border-t-transparent rounded-full"></span>
+          Generating playlist...
         </div>
       )}
       {progressStage === "done" && (
