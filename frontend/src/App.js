@@ -51,6 +51,22 @@ export default function App() {
     setFile(e.target.files[0]);
   };
 
+  // polls backend until Colab sends "processing_started"
+  const pollForProcessingStarted = () => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/status_check`);
+        const json = await res.json();
+        if (json.status === "processing_started") {
+          clearInterval(interval);
+          setProgressStage("analyzing"); // switch to analyzing
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 2000);
+  };
+
   const handleUploadAndProcess = async () => {
     if (!file) return alert("Please select a video");
 
@@ -59,6 +75,7 @@ export default function App() {
 
     try {
       setProgressStage("uploading");
+
       const uploadResponse = await fetch(`${API_BASE}/upload_video`, {
         method: "POST",
         body: formData,
@@ -70,7 +87,9 @@ export default function App() {
         return alert("Upload failed. Try again.");
       }
 
-      setProgressStage("analyzing");
+      // start polling until colab sends "processing_started"
+      pollForProcessingStarted();
+
       const processResponse = await fetch(`${API_BASE}/process_latest`, {
         method: "POST",
       });
@@ -194,6 +213,7 @@ export default function App() {
         </div>
       )}
 
+      {/* playlist embed */}
       {playlistUrl && (
         <div className="mt-6">
           <h2 className="text-xl font-semibold">Generated Playlist:</h2>
