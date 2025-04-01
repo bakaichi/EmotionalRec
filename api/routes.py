@@ -51,6 +51,7 @@ def status_update(data: dict):
     """
     status = data.get("status")
     print(f"📡 Colab status update: {status}")
+    current_status["stage"] = status  # change status
     return {"message": f"Status '{status}' received"}
 
 
