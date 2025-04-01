@@ -7,6 +7,8 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(false); // added to track Spotify login
   const [detectedEmotion, setDetectedEmotion] = useState(null); // added for emotion preview
 
+  const API_BASE = process.env.REACT_APP_API_URL;
+
   const emotionEmojis = {
     happy: "😄",
     sad: "😢",
@@ -17,7 +19,7 @@ export default function App() {
 
   useEffect(() => {
     // check if access token is available
-    fetch("http://127.0.0.1:8000/token")
+    fetch(`${API_BASE}/token`)
       .then((res) => {
         if (res.status === 200) {
           setLoggedIn(true);
@@ -26,25 +28,25 @@ export default function App() {
       .catch(() => {
         setLoggedIn(false);
       });
-  }, []);
+  }, [API_BASE]);
 
   const handleLogin = () => {
-    window.location.href = "http://127.0.0.1:8000/login"; // to be adjusted if hosted externally
+    window.location.href = `${API_BASE}/login`;
   };
 
   const handleLogout = () => {
-    fetch("http://127.0.0.1:8000/logout", {
+    fetch(`${API_BASE}/logout`, {
       method: "POST",
     })
       .then(() => {
         setLoggedIn(false);
-        window.location.reload(); // refresh to reflect logged-out UI
+        window.location.reload();
       })
       .catch((err) => {
         console.error("Logout failed:", err);
       });
   };
-  
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
@@ -56,9 +58,8 @@ export default function App() {
     formData.append("video", file);
 
     try {
-      // uploading a video video
       setProgressStage("uploading");
-      const uploadResponse = await fetch("http://127.0.0.1:8000/upload_video", {
+      const uploadResponse = await fetch(`${API_BASE}/upload_video`, {
         method: "POST",
         body: formData,
       });
@@ -69,9 +70,8 @@ export default function App() {
         return alert("Upload failed. Try again.");
       }
 
-      // trigger processing
       setProgressStage("analyzing");
-      const processResponse = await fetch("http://127.0.0.1:8000/process_latest", {
+      const processResponse = await fetch(`${API_BASE}/process_latest`, {
         method: "POST",
       });
 
