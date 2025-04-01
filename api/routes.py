@@ -33,6 +33,16 @@ def logout():
 
     return JSONResponse(content={"message": "No active session to log out."}, status_code=200)
 
+@router.post("/status_update")
+def status_update(data: dict):
+    """
+    Receives live updates from Colab about processing status.
+    Can be used by frontend to reflect real-time stages (example: processing started).
+    """
+    status = data.get("status")
+    print(f"📡 Colab status update: {status}")
+    return {"message": f"Status '{status}' received"}
+
 
 @router.post("/colab_callback")
 def colab_callback(data: dict):
