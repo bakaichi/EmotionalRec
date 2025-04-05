@@ -69,7 +69,10 @@ def colab_callback(data: dict):
 
     recommender = EmotionRecommender(user_authenticated=bool(access_token), user_token=access_token)
     recommendations = recommender.recommend_songs(emotion)
-    playlist = recommender.create_playlist(emotion, access_token) if access_token else None
+    if access_token:
+        playlist = recommender.create_playlist(emotion, access_token)
+    else:
+        playlist = recommender.get_public_playlist_by_emotion(emotion)
 
     result = {
         "emotion": emotion,
