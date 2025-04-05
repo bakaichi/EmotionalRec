@@ -9,6 +9,11 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from fastapi import BackgroundTasks
 from threading import Event
+from dotenv import load_dotenv
+
+load_dotenv()
+REDIRECT_URI = os.getenv("REDIRECT_URI")
+
 
 router = APIRouter()
 sp_oauth = get_spotify_oauth()
@@ -168,7 +173,7 @@ def callback(code: str = Query(None)):
     if not token_info:
         raise HTTPException(status_code=400, detail="Failed to retrieve access token.")
 
-    return RedirectResponse("http://localhost:3000")  # route to be updated if hosted
+    return RedirectResponse(REDIRECT_URI)  # route to be updated if hosted
 
 @router.post("/create-playlist/{emotion}", summary="Create a Spotify playlist based on emotion")
 def create_playlist(emotion: str, access_token: str):
