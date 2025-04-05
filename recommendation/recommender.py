@@ -12,7 +12,7 @@ MOOD_GENRE_MAPPING = {
     "happy": ["pop", "dance", "edm", "k-pop", "j-pop", "reggaeton", "house", "funk", "hip-hop", "trap", "afrobeats", "baile funk", "latin urban", "indie pop", "pop rock", "alternative rock", "ska", "trance", "future bass"],
     "sad": ["acoustic", "indie folk", "singer-songwriter", "folk rock", "blues", "jazz", "classical", "lo-fi", "chillhop", "shoegaze", "dream pop", "alt r&b", "soul", "chamber pop", "alternative rock", "emo", "post-rock"],
     "angry": ["hard techno", "heavy metal", "nu metal", "death metal", "thrash metal", "post-hardcore", "industrial metal", "darkwave", "aggrotech", "noise rock", "punk rock", "hardcore punk", "post-punk", "skate punk", "rap metal", "drill", "hardcore hip-hop", "dubstep", "breakcore"],
-    "neutral": ["ambient", "downtempo", "new age", "meditation", "drone", "bossa nova", "chill jazz", "classical", "baroque", "instrumental", "deep house", "chillstep", "lounge", "trip-hop", "soft techno", "soft rock", "indie folk", "slowcore", "dream pop"]
+    "calm": ["ambient", "downtempo", "new age", "meditation", "drone", "bossa nova", "chill jazz", "classical", "baroque", "instrumental", "deep house", "chillstep", "lounge", "trip-hop", "soft techno", "soft rock", "indie folk", "slowcore", "dream pop"]
 }
 
 # fallback values

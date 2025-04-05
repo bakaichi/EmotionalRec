@@ -34,12 +34,12 @@ def get_spotify_client(user_authenticated=False, user_token=None):
             client_id=SPOTIFY_CLIENT_ID,
             client_secret=SPOTIFY_CLIENT_SECRET,
             redirect_uri=REDIRECT_URI,
-            scope="user-top-read playlist-modify-private user-read-recently-played user-library-read"
+            scope="user-top-read playlist-modify-private user-read-recently-played user-library-read",
+            cache_path=".cache"  # used only when logged in
         )
 
         try:
             token_info = auth_manager.get_cached_token()
-            
             if not token_info or auth_manager.is_token_expired(token_info):
                 token_info = auth_manager.refresh_access_token(user_token)
 
@@ -53,6 +53,8 @@ def get_spotify_client(user_authenticated=False, user_token=None):
             logger.error(f"Error with Spotify authentication: {str(e)}")
             return None
 
+    # prevent .cache usage for non-authenticated users
     return spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-        client_id=SPOTIFY_CLIENT_ID, client_secret=SPOTIFY_CLIENT_SECRET
+        client_id=SPOTIFY_CLIENT_ID,
+        client_secret=SPOTIFY_CLIENT_SECRET
     ))
