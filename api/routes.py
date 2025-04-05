@@ -10,9 +10,8 @@ from pydrive2.drive import GoogleDrive
 from fastapi import BackgroundTasks
 from threading import Event
 
-
 router = APIRouter()
-sp_oauth = get_spotify_oauth()
+sp_oauth = None  # 👈 initialized here, no early assignment
 
 # sets processing stage
 current_status = {"stage": None} 
@@ -156,6 +155,8 @@ def login():
     """
     Redirects user directly to Spotify auth page.
     """
+    global sp_oauth
+    sp_oauth = get_spotify_oauth()
     auth_url = sp_oauth.get_authorize_url()
     return RedirectResponse(auth_url)
 
@@ -168,13 +169,11 @@ def callback(code: str = Query(None)):
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code is missing.")
 
+    global sp_oauth
+    sp_oauth = get_spotify_oauth()
     token_info = sp_oauth.get_access_token(code)
     if not token_info:
         raise HTTPException(status_code=400, detail="Failed to retrieve access token.")
-
-    # resets SpotifyOAuth here as well after login
-    global sp_oauth
-    sp_oauth = get_spotify_oauth()
 
     return RedirectResponse("http://localhost:3000") # route to be updated if hosted
 
