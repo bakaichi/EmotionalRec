@@ -28,32 +28,43 @@ def get_spotify_oauth():
     )
 
 def get_spotify_client(user_authenticated=False, user_token=None):
-    """returns a Spotipy client, and ensures that token is refreshed if required."""
+    """
+    Returns a Spotipy client. If token is invalid or expired, falls back to unauthenticated (public) mode.
+    """
     if user_authenticated and user_token:
         auth_manager = SpotifyOAuth(
             client_id=SPOTIFY_CLIENT_ID,
             client_secret=SPOTIFY_CLIENT_SECRET,
             redirect_uri=REDIRECT_URI,
             scope="user-top-read playlist-modify-private user-read-recently-played user-library-read",
-            cache_path=".cache"  # used only when logged in
+            cache_path=".cache"
         )
 
         try:
             token_info = auth_manager.get_cached_token()
-            if not token_info or auth_manager.is_token_expired(token_info):
-                token_info = auth_manager.refresh_access_token(user_token)
 
-            if not token_info or "access_token" not in token_info:
-                logger.error("Failed to get a valid Spotify token.")
-                return None
+            # try refreshing if expired or missing
+            if not token_info or auth_manager.is_token_expired(token_info):
+                refresh_token = token_info.get("refresh_token") if token_info else None
+                if refresh_token:
+                    token_info = auth_manager.refresh_access_token(refresh_token)
+                else:
+                    logger.warning("⚠️ No refresh token found. Falling back to public client.")
+                    return spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+                        client_id=SPOTIFY_CLIENT_ID,
+                        client_secret=SPOTIFY_CLIENT_SECRET
+                    ))
 
             return spotipy.Spotify(auth=token_info["access_token"])
 
         except Exception as e:
-            logger.error(f"Error with Spotify authentication: {str(e)}")
-            return None
+            logger.error(f"error with Spotify authentication: {str(e)}")
+            logger.warning("falling back to public client due to auth failure.")
+            return spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+                client_id=SPOTIFY_CLIENT_ID,
+                client_secret=SPOTIFY_CLIENT_SECRET
+            ))
 
-    # prevent .cache usage for non-authenticated users
     return spotipy.Spotify(auth_manager=SpotifyClientCredentials(
         client_id=SPOTIFY_CLIENT_ID,
         client_secret=SPOTIFY_CLIENT_SECRET
