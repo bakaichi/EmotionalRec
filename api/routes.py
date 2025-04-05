@@ -9,10 +9,6 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from fastapi import BackgroundTasks
 from threading import Event
-from dotenv import load_dotenv
-
-load_dotenv()
-REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 
 router = APIRouter()
@@ -35,11 +31,14 @@ def logout():
     if os.path.exists(cache_file):
         try:
             os.remove(cache_file)
-            return JSONResponse(content={"message": "Logged out successfully."}, status_code=200)
         except Exception as e:
             return JSONResponse(content={"error": f"Error deleting cache: {e}"}, status_code=500)
 
-    return JSONResponse(content={"message": "No active session to log out."}, status_code=200)
+    # 🧼 Reset the OAuth state after logout to prevent stale token usage
+    global sp_oauth
+    sp_oauth = get_spotify_oauth()
+
+    return JSONResponse(content={"message": "Logged out successfully."}, status_code=200)
 
 @router.get("/status_check")
 def status_check():
@@ -173,7 +172,11 @@ def callback(code: str = Query(None)):
     if not token_info:
         raise HTTPException(status_code=400, detail="Failed to retrieve access token.")
 
-    return RedirectResponse(REDIRECT_URI)  # route to be updated if hosted
+    # resets SpotifyOAuth here as well after login
+    global sp_oauth
+    sp_oauth = get_spotify_oauth()
+
+    return RedirectResponse("http://localhost:3000") # route to be updated if hosted
 
 @router.post("/create-playlist/{emotion}", summary="Create a Spotify playlist based on emotion")
 def create_playlist(emotion: str, access_token: str):
