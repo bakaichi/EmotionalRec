@@ -12,7 +12,7 @@ MOOD_GENRE_MAPPING = {
     "happy": ["pop", "dance", "edm", "k-pop", "j-pop", "reggaeton", "house", "funk", "hip-hop", "trap", "afrobeats", "baile funk", "latin urban", "indie pop", "pop rock", "alternative rock", "ska", "trance", "future bass"],
     "sad": ["acoustic", "indie folk", "singer-songwriter", "folk rock", "blues", "jazz", "classical", "lo-fi", "chillhop", "shoegaze", "dream pop", "alt r&b", "soul", "chamber pop", "alternative rock", "emo", "post-rock"],
     "angry": ["hard techno", "heavy metal", "nu metal", "death metal", "thrash metal", "post-hardcore", "industrial metal", "darkwave", "aggrotech", "noise rock", "punk rock", "hardcore punk", "post-punk", "skate punk", "rap metal", "drill", "hardcore hip-hop", "dubstep", "breakcore"],
-    "calm": ["ambient", "downtempo", "new age", "meditation", "drone", "bossa nova", "chill jazz", "classical", "baroque", "instrumental", "deep house", "chillstep", "lounge", "trip-hop", "soft techno", "soft rock", "indie folk", "slowcore", "dream pop"]
+    "neutral": ["ambient", "downtempo", "new age", "meditation", "drone", "bossa nova", "chill jazz", "classical", "baroque", "instrumental", "deep house", "chillstep", "lounge", "trip-hop", "soft techno", "soft rock", "indie folk", "slowcore", "dream pop"]
 }
 
 # fallback values
@@ -30,21 +30,37 @@ class EmotionRecommender:
 
     
     def get_public_playlist_by_emotion(self, emotion):
-        """Search for a public Spotify playlist matching the emotion keyword."""
+        """Search for a public Spotify playlist where the title includes the emotion word."""
         try:
             keyword = "calm" if emotion == "neutral" else emotion
-            results = self.sp.search(q=keyword, type="playlist", limit=1)
-            playlists = results.get("playlists", {}).get("items", [])
-            if not playlists:
-                return None
-            return {
-                "message": "Public playlist fetched.",
-                "playlist_url": playlists[0]["external_urls"]["spotify"]
-            }
-        except Exception as e:
-            logger.error(f"Error fetching public playlist: {str(e)}")
-            return None
+            search_query = f"{keyword}"
 
+            results = self.sp.search(q=search_query, type="playlist", limit=10)
+
+            if not results or "playlists" not in results:
+                logger.warning("No playlist results from Spotify search")
+                return None
+
+            playlists = results["playlists"].get("items", [])
+            if not playlists:
+                logger.warning("No playlists found in search results")
+                return None
+
+            # filter playlists by title containing the keyword (case insensitive)
+            matching_playlists = [pl for pl in playlists if keyword.lower() in pl["name"].lower()]
+            if not matching_playlists:
+                logger.warning(f"No playlist titles matched keyword: {keyword}")
+                return None
+
+            chosen = random.choice(matching_playlists)
+            return {
+                "message": f"Public playlist matched title with '{keyword}'",
+                "playlist_url": chosen["external_urls"]["spotify"]
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching public playlist by title match: {str(e)}")
+            return None 
 
     
     def get_top_artists_tracks_genres(self):
