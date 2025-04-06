@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import {checkToken, loginUrl, logout, uploadVideo, triggerProcessing, pollStatus,} from "../services/api";
+import {checkToken, loginUrl, logout, uploadVideo,triggerProcessing,pollStatus,} from "../services/api";
+
+import EmotionBreakdown from "../components/EmotionBreakdown"; // 🆕 animated breakdown
 
 export default function EmotionUploader() {
   const [file, setFile] = useState(null);
   const [playlistUrl, setPlaylistUrl] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+  const [emotionBreakdown, setEmotionBreakdown] = useState(null); // 🆕 store breakdown
   const [progressStage, setProgressStage] = useState(null); // added to track progress stage
   const [loggedIn, setLoggedIn] = useState(false); // added to track Spotify login
 
@@ -51,6 +54,8 @@ export default function EmotionUploader() {
 
     try {
       setProgressStage("uploading"); // show uploading spinner
+      setDetectedEmotion(null);
+      setEmotionBreakdown(null); //  clear previous
 
       const uploadRes = await uploadVideo(formData);
       if (!uploadRes.success) {
@@ -65,6 +70,7 @@ export default function EmotionUploader() {
 
       if (data.emotion) {
         setDetectedEmotion(data.emotion);
+        setEmotionBreakdown(data.breakdown || null); // set breakdown if provided
         setProgressStage("generating_playlist"); // show playlist generation spinner
       }
 
@@ -173,6 +179,13 @@ export default function EmotionUploader() {
           <div className="text-green-400 font-semibold">✅ Playlist ready!</div>
         )}
       </div>
+
+      {/* emotion breakdown typewriter-style */}
+      {emotionBreakdown && (
+        <div className="mt-4">
+          <EmotionBreakdown breakdown={emotionBreakdown} />
+        </div>
+      )}
 
       {/* playlist embed */}
       {playlistUrl && (
