@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {checkToken, loginUrl, logout, uploadVideo,triggerProcessing,pollStatus,} from "../services/api";
 
-import EmotionBreakdown from "../components/EmotionBreakdown"; // 🆕 animated breakdown
+import EmotionBreakdown from "../components/EmotionBreakdown"; // animated breakdown
 
 export default function EmotionUploader() {
   const [file, setFile] = useState(null);
   const [playlistUrl, setPlaylistUrl] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
-  const [emotionBreakdown, setEmotionBreakdown] = useState(null); // 🆕 store breakdown
+  const [emotionBreakdown, setEmotionBreakdown] = useState(null); // store breakdown
   const [progressStage, setProgressStage] = useState(null); // added to track progress stage
   const [loggedIn, setLoggedIn] = useState(false); // added to track Spotify login
 
