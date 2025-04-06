@@ -65,20 +65,26 @@ def colab_callback(data: dict):
     Calls /recommend internally and stores response.
     """
     emotion = data.get("emotion")
+    breakdown = data.get("breakdown", [])  #  receive the breakdown from colab
     access_token = data.get("access_token")  # optional
 
     if not emotion:
         raise HTTPException(status_code=400, detail="Emotion not provided.")
 
+    # build recommender and get recommendations
     recommender = EmotionRecommender(user_authenticated=bool(access_token), user_token=access_token)
     recommendations = recommender.recommend_songs(emotion)
+
+    # get either personal playlist or public
     if access_token:
         playlist = recommender.create_playlist(emotion, access_token)
     else:
         playlist = recommender.get_public_playlist_by_emotion(emotion)
 
+    # full result with breakdown
     result = {
         "emotion": emotion,
+        "breakdown": breakdown, 
         "recommended_songs": recommendations,
         "playlist_created": playlist
     }
