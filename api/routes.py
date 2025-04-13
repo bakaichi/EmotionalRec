@@ -7,8 +7,10 @@ import os
 import time
 from pydrive2.auth import GoogleAuth 
 from pydrive2.drive import GoogleDrive
-from fastapi import BackgroundTasks
 from threading import Event
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = APIRouter()
 sp_oauth = None  # 👈 initialized here, no early assignment
@@ -180,8 +182,8 @@ def callback(code: str = Query(None)):
     token_info = sp_oauth.get_access_token(code)
     if not token_info:
         raise HTTPException(status_code=400, detail="Failed to retrieve access token.")
-
-    return RedirectResponse("http://localhost:3000") # route to be updated if hosted
+    FRONTEND_REDIRECT = os.getenv("FRONTEND_REDIRECT")
+    return RedirectResponse(FRONTEND_REDIRECT) # route to be updated if hosted
 
 @router.post("/create-playlist/{emotion}", summary="Create a Spotify playlist based on emotion")
 def create_playlist(emotion: str, access_token: str):
