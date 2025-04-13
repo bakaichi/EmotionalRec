@@ -3,6 +3,12 @@
 ## **📌 Overview**
 EmotionalRec is an AI-powered **music recommendation system** that analyzes **facial expressions from user-submitted videos** to recommend **personalized Spotify playlists**.
 
+## 🎉 Key Features
+- Emotion detection from uploaded video using DeepFace (RetinaFace backend)
+- Real-time frontend feedback via status polling and spinners
+- Top-3 emotion breakdown with confidence percentages
+- Spotify playlist embedding (personalized if logged in)
+
 ## **🚀 How It Works**
 1. **Emotion Detection** 🧠
    - Users upload videos via the frontend.
@@ -51,6 +57,7 @@ pip install -r requirements.txt
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 REDIRECT_URI=http://localhost:8000/callback
+FRONTEND_REDIRECT= local or deployed version url.
 ```
 
 ### **4️⃣ Set Up Google Drive Access**
@@ -126,9 +133,16 @@ This makes sure that requests from the React app can be processed by the FastAPI
 4. Colab processes the video, detects emotion.
 5. Sends emotion + token to backend.
 6. Backend sends back a playlist.
-7. Playlis (iFrame) is embedded in the frontend.
+7. Playlist (iFrame) is embedded in the frontend.
 
 ---
+
+### **Colab Notebook Auth Tip (if relevant)**
+
+If Colab is authenticated with a different Google account than the one that owns the Drive folder:
+
+-  Make sure your Colab is logged in with the same account that has access to the shared Drive folder.
+
 
 🔥 **Enjoy Emotion-Based Music Recommendations!** 🎧
 
